@@ -6,13 +6,20 @@ using System;
 // Open file
 string filePath = "/home/sfontes/Code/rpg2dotnet/ExampleHidden/P56400P.MBR";
 
+public class Column
+{
+    public string Name { get; set; }
+    public string LanguageFriendlyName { get; set; }
+    public string DataType { get; set; }
+}
+
 public class DataSource
 {
     public string Name { get; set; }
     public string Alias { get; set; }
     public bool ReadAccess { get; set; }
     public bool WriteAccess { get; set; }
-    // TODO: add generic collection to hold data equivalent to file rows/records
+    List<Column> Columns { get; set; }
 }
 class Program
 {
