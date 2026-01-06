@@ -15,7 +15,7 @@ class Program
         DebugConfig.EnableDebug = true;     // Master switch
         DebugConfig.DebugFSpec = false;      // F-spec (file definitions)
         DebugConfig.DebugESpec = true;      // E-spec (arrays/tables)
-        DebugConfig.DebugISpec = false;     // I-spec (input specs) - not implemented yet
+        DebugConfig.DebugISpec = true;      // I-spec (input specs)
         DebugConfig.DebugCSpec = false;     // C-spec (calculation specs) - not implemented yet
         DebugConfig.DebugOSpec = false;     // O-spec (output specs) - not implemented yet
 
@@ -23,7 +23,10 @@ class Program
 
         List<DataSource> dataSources = new List<DataSource>();
         List<ArrayTable> arrayTables = new List<ArrayTable>();
+        List<DataStructure> dataStructures = new List<DataStructure>();
+        List<CopyDirective> copyDirectives = new List<CopyDirective>();
         DataSource? currentDataSource = null;
+        DataStructure? currentDataStructure = null;
 
         // read line by line
         using (StreamReader sr = new StreamReader(filePath))
@@ -55,6 +58,14 @@ class Program
                 else if (instructionType == 'E')
                 {
                     ESpecParser.ParseESpec(line, arrayTables);
+                }
+                else if (instructionType == 'I')
+                {
+                    ISpecParser.ParseISpec(line, dataStructures, copyDirectives, ref currentDataStructure);
+                }
+                else if (instructionType == 'I')
+                {
+                    ISpecParser.ParseISpec(line, dataStructures, copyDirectives, ref currentDataStructure);
                 }
                 else
                 {
@@ -122,6 +133,39 @@ class Program
                 Console.WriteLine();
             }
         }
+
+        if (DebugConfig.IsEnabled("I"))
+        {
+            // Output parsed data structures
+            Console.WriteLine("\n=== Parsed Data Structures ===");
+            foreach (var ds in dataStructures)
+            {
+                Console.WriteLine($"Data Structure: {ds.Name}");
+                Console.WriteLine($"  Type: {ds.Type}");
+                if (ds.IsExternallyDescribed)
+                {
+                    Console.WriteLine($"  Externally Described: {ds.ExternalFile}");
+                }
+                Console.WriteLine($"  Fields: {ds.Fields.Count}");
+                foreach (var field in ds.Fields)
+                {
+                    Console.WriteLine($"    {field.Name}: pos {field.FromPosition}-{field.ToPosition} ({field.Length} bytes) {field.DataType}");
+                }
+                Console.WriteLine();
+            }
+
+            // Output copy directives
+            if (copyDirectives.Count > 0)
+            {
+                Console.WriteLine("\n=== Copy Directives ===");
+                foreach (var copy in copyDirectives)
+                {
+                    Console.WriteLine($"/COPY {copy.Library},{copy.Member}");
+                }
+                Console.WriteLine();
+            }
+        }
+
         Console.WriteLine();
     }
 }
