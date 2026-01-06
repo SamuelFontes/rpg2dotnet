@@ -84,7 +84,10 @@ public static class FSpecParser
         dataSources.Add(ds);
         currentDataSource = ds;
 
-        Console.WriteLine($"Parsed F-spec: {ds.Name} (Type: {(ds.ReadAccess ? "I" : "")}{(ds.WriteAccess ? "O" : "")}{(ds.UpdateAccess ? "U" : "")})");
+        if (DebugConfig.IsEnabled("F"))
+        {
+            Console.WriteLine($"Parsed F-spec: {ds.Name} (Type: {(ds.ReadAccess ? "I" : "")}{(ds.WriteAccess ? "O" : "")}{(ds.UpdateAccess ? "U" : "")})");
+        }
     }
 
     private static void ParseFSpecContinuation(string line, DataSource ds)

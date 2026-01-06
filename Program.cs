@@ -1,6 +1,7 @@
 ﻿
 namespace RPG2Dotnet;
 
+using System.Diagnostics;
 using RPG2Dotnet.Models;
 using RPG2Dotnet.Parsers;
 
@@ -10,9 +11,18 @@ class Program
 {
     static void Main(string[] args)
     {
+        // Debug configuration - toggle these to control parser debug output
+        DebugConfig.EnableDebug = true;     // Master switch
+        DebugConfig.DebugFSpec = false;      // F-spec (file definitions)
+        DebugConfig.DebugESpec = true;      // E-spec (arrays/tables)
+        DebugConfig.DebugISpec = false;     // I-spec (input specs) - not implemented yet
+        DebugConfig.DebugCSpec = false;     // C-spec (calculation specs) - not implemented yet
+        DebugConfig.DebugOSpec = false;     // O-spec (output specs) - not implemented yet
+
         string filePath = "/home/sfontes/Code/rpg2dotnet/ExampleHidden/P56400P.MBR";
 
         List<DataSource> dataSources = new List<DataSource>();
+        List<ArrayTable> arrayTables = new List<ArrayTable>();
         DataSource? currentDataSource = null;
 
         // read line by line
@@ -42,6 +52,10 @@ class Program
                 {
                     FSpecParser.ParseFSpec(line, dataSources, ref currentDataSource);
                 }
+                else if (instructionType == 'E')
+                {
+                    ESpecParser.ParseESpec(line, arrayTables);
+                }
                 else
                 {
                     // // break line into words/tokens, only get after column 6
@@ -62,26 +76,52 @@ class Program
             }
         }
 
-        // Output parsed data sources
-        Console.WriteLine("\n=== Parsed Data Sources ===");
-        foreach (var ds in dataSources)
+
+        if (DebugConfig.IsEnabled("F"))
         {
-            Console.WriteLine($"File: {ds.Name}");
-            Console.WriteLine($"  Alias: {ds.Alias}");
-            Console.WriteLine($"  Device: {ds.Device}");
-            Console.WriteLine($"  Read: {ds.ReadAccess}, Write: {ds.WriteAccess}, Update: {ds.UpdateAccess}");
-            Console.WriteLine($"  Externally Described: {ds.IsExternallyDescribed}");
-            Console.WriteLine($"  Keyed: {ds.IsKeyed}");
-            Console.WriteLine($"  Full Procedural: {ds.IsFullProcedural}");
-            if (!string.IsNullOrEmpty(ds.RecordFormatName))
+            // Output parsed data sources
+            Console.WriteLine("\n=== Parsed Data Sources ===");
+            foreach (var ds in dataSources)
             {
-                Console.WriteLine($"  Record Format: {ds.RecordFormatName}");
+                Console.WriteLine($"File: {ds.Name}");
+                Console.WriteLine($"  Alias: {ds.Alias}");
+                Console.WriteLine($"  Device: {ds.Device}");
+                Console.WriteLine($"  Read: {ds.ReadAccess}, Write: {ds.WriteAccess}, Update: {ds.UpdateAccess}");
+                Console.WriteLine($"  Externally Described: {ds.IsExternallyDescribed}");
+                Console.WriteLine($"  Keyed: {ds.IsKeyed}");
+                Console.WriteLine($"  Full Procedural: {ds.IsFullProcedural}");
+                if (!string.IsNullOrEmpty(ds.RecordFormatName))
+                {
+                    Console.WriteLine($"  Record Format: {ds.RecordFormatName}");
+                }
+                if (!string.IsNullOrEmpty(ds.RecordFormatRename))
+                {
+                }
             }
-            if (!string.IsNullOrEmpty(ds.RecordFormatRename))
-            {
-                Console.WriteLine($"  Record Format Rename: {ds.RecordFormatRename}");
-            }
-            Console.WriteLine();
         }
+        if (DebugConfig.IsEnabled("E"))
+        {
+            // Output parsed arrays/tables
+            Console.WriteLine("\n=== Parsed Arrays/Tables ===");
+            foreach (var arr in arrayTables)
+            {
+                Console.WriteLine($"Array: {arr.Name}");
+                Console.WriteLine($"  Entries: {arr.NumberOfEntries}");
+                Console.WriteLine($"  Entry Length: {arr.EntryLength} digits");
+                Console.WriteLine($"  Decimal Positions: {arr.DecimalPositions}");
+                Console.WriteLine($"  Data Type: {arr.DataType}");
+                if (!string.IsNullOrEmpty(arr.FromFileName))
+                {
+                    Console.WriteLine($"  From File: {arr.FromFileName}");
+                }
+                if (!string.IsNullOrEmpty(arr.ToFileName))
+                {
+                    Console.WriteLine($"  To File: {arr.ToFileName}");
+                }
+                Console.WriteLine($"  C# Type: decimal[{arr.NumberOfEntries}] (with scale of {arr.DecimalPositions})");
+                Console.WriteLine();
+            }
+        }
+        Console.WriteLine();
     }
 }
