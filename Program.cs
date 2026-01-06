@@ -1,72 +1,87 @@
 ﻿
 namespace RPG2Dotnet;
 
-using System;
+using RPG2Dotnet.Models;
+using RPG2Dotnet.Parsers;
 
 // Open file
-string filePath = "/home/sfontes/Code/rpg2dotnet/ExampleHidden/P56400P.MBR";
 
-public class Column
-{
-    public string Name { get; set; }
-    public string LanguageFriendlyName { get; set; }
-    public string DataType { get; set; }
-}
-
-public class DataSource
-{
-    public string Name { get; set; }
-    public string Alias { get; set; }
-    public bool ReadAccess { get; set; }
-    public bool WriteAccess { get; set; }
-    List<Column> Columns { get; set; }
-}
 class Program
 {
-    // The Main method is the entry point
     static void Main(string[] args)
     {
+        string filePath = "/home/sfontes/Code/rpg2dotnet/ExampleHidden/P56400P.MBR";
+
+        List<DataSource> dataSources = new List<DataSource>();
+        DataSource? currentDataSource = null;
 
         // read line by line
         using (StreamReader sr = new StreamReader(filePath))
         {
-            string line;
+            string? line;
             while ((line = sr.ReadLine()) != null)
             {
-                // break line into words/tokens
-                string[] tokens = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-                // Check if there are enough tokens to access the 6th token
-                if (tokens.Length < 6)
+                // Skip empty or too-short lines
+                if (line.Length < 6)
                 {
                     continue;
                 }
-                // Get the 6th token as it indicates instruction type
-                string instructionType = tokens[5];
 
-                if (instructionType.IsNullOrEmpty())
+                // Skip if line is comment (column 7 = index 6)
+                if (line.Length >= 7 && line[6] == '*')
                 {
                     continue;
                 }
+
+                // Get instruction type from column 6 (index 5) - RPG fixed format
+                // Columns 1-5 are typically sequence numbers or blank
+                // Column 6 is the spec type (F, I, C, O, etc.)
+                char instructionType = line.Length > 5 ? line[5] : ' ';
 
                 if (instructionType == 'F')
                 {
-                    // This is opening a file so we will threat those as Lists in C#
+                    FSpecParser.ParseFSpec(line, dataSources, ref currentDataSource);
                 }
-
-
-                // Iterate through tokens
-                foreach (string token in tokens)
+                else
                 {
-                    // Handle comments by skipping tokens that start with '*'
-                    if (token.StartsWith("*"))
-                    {
-                        break;
-                    }
+                    // // break line into words/tokens, only get after column 6
+                    // string[] tokens = line.Length >= 7 ? line.Substring(6).Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries) : Array.Empty<string>();
 
-                    Console.WriteLine($"Token: {token}");
+                    // // Iterate through tokens
+                    // foreach (string token in tokens)
+                    // {
+                    //     // Handle comments by skipping tokens that start with '*'
+                    //     if (token.StartsWith("*"))
+                    //     {
+                    //         break;
+                    //     }
+
+                    //     Console.WriteLine($"Token: {token}");
+                    // }
                 }
             }
+        }
+
+        // Output parsed data sources
+        Console.WriteLine("\n=== Parsed Data Sources ===");
+        foreach (var ds in dataSources)
+        {
+            Console.WriteLine($"File: {ds.Name}");
+            Console.WriteLine($"  Alias: {ds.Alias}");
+            Console.WriteLine($"  Device: {ds.Device}");
+            Console.WriteLine($"  Read: {ds.ReadAccess}, Write: {ds.WriteAccess}, Update: {ds.UpdateAccess}");
+            Console.WriteLine($"  Externally Described: {ds.IsExternallyDescribed}");
+            Console.WriteLine($"  Keyed: {ds.IsKeyed}");
+            Console.WriteLine($"  Full Procedural: {ds.IsFullProcedural}");
+            if (!string.IsNullOrEmpty(ds.RecordFormatName))
+            {
+                Console.WriteLine($"  Record Format: {ds.RecordFormatName}");
+            }
+            if (!string.IsNullOrEmpty(ds.RecordFormatRename))
+            {
+                Console.WriteLine($"  Record Format Rename: {ds.RecordFormatRename}");
+            }
+            Console.WriteLine();
         }
     }
 }
